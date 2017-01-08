@@ -95,8 +95,8 @@ object Robot {
 
 /*
  * This is an example of robot movements
- * I made a decision to stick to a library style implementation.
- * Therefore, this is how a client code should look like this:
+ * I made a decision to stick to a library style implementation
+ * Therefore, this is how a client code should look like:
  */
 object RobotApp {
 
