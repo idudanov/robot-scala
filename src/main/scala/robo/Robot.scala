@@ -3,6 +3,8 @@ package robo
 import cats.data.State
 import cats.implicits._
 
+import scala.io.Source
+
 
 sealed trait Direction
 
@@ -71,7 +73,7 @@ object Robot {
   */
   def left:RobotState[Unit] = State.modify[Robot]{
     case r@Robot(false, _, _, _) => r
-    case r@Robot(true,_, _, North) =>  r.copy(d = West)
+    case r@Robot(true,_, _, North) => r.copy(d = West)
     case r@Robot(true,_, _, West) => r.copy(d = South)
     case r@Robot(true,_, _, South) => r.copy(d = East)
     case r@Robot(true,_, _, East) =>  r.copy(d = North)
@@ -83,7 +85,7 @@ object Robot {
     */
   def report:RobotState[String] = State.get[Robot].map {
     case r@Robot(false, _, _, _) => "Robot is NOT placed"
-    case Robot(true, x, y, d) =>   s"Robot's position X = $x, Y = $y, Direction = $d"
+    case Robot(true, x, y, d) =>   s"$x,$y,$d"
   }
 
   /**
@@ -93,22 +95,49 @@ object Robot {
   def apply():Robot = Robot(notPlaced, minX, minY, North)
 }
 
-/*
- * This is an example of robot movements
- * I made a decision to stick to a library style implementation
- * Therefore, this is how a client code should look like:
- */
 object RobotApp {
 
   def main(args: Array[String]): Unit = {
 
-    val result = (for {
-      _ <- Robot.place(0,0, North)
-      _ <- Robot.right
-      _ <- Robot.move
-      _ <- Robot.move
-      p <- Robot.report
-    } yield p).runA(Robot()).value
+    if (args.length != 1) {
+      System.err.println("Usage: RobotApp <file>")
+      System.exit(1)
+    }
+
+    /**
+      * Decodes Direction from a String value
+      * @param s direction in a String format
+      * @return Direction
+      */
+    def decDir(s: String): Direction = {
+      s match {
+        case "NORTH" => North
+        case "WEST" => West
+        case "SOUTH" => South
+        case "EAST" => East
+      }
+    }
+
+    /**
+      * Decodes PLACE command
+      * @param s PLACE command
+      * @return Int, Int, Direction)
+      */
+    def dec(s: String): (Int, Int, Direction) = {
+      val c = s.split(" ")(1).split(",").map(x => x.trim)
+      (c(0).toInt, c(1).toInt, decDir(c(2)))
+    }
+
+    val result = Source.fromFile(args(0)).getLines.map(c => {
+      c.split(" ")(0) match {
+        case "MOVE" => Robot.move.as("")
+        case "LEFT" => Robot.left.as("")
+        case "RIGHT" => Robot.right.as("")
+        case "PLACE" => val p = dec(c); Robot.place(p._1, p._2, p._3).as("")
+        case "REPORT" => Robot.report
+      }
+    }).reduce((a1, a2) => a1.flatMap(_ => a2))
+      .runA(Robot()).value
 
     println(result)
   }

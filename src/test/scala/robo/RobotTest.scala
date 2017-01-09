@@ -169,5 +169,4 @@ class RobotTest extends FunSuite with Matchers {
 
     assert(result === Robot(true, 0, 5, East))
   }
-
 }
