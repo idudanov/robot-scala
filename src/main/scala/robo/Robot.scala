@@ -97,6 +97,41 @@ object Robot {
 
 object RobotApp {
 
+  /**
+    * Filters out invalid commands
+    * @param s a given command
+    * @return Boolean
+    */
+  def filterCommands(s: String): Boolean = {
+    Set("MOVE", "LEFT", "RIGHT", "REPORT").contains(s) || {
+      "PLACE \\d,\\d,[A-Z]{4,5}".r.findFirstIn(s) match {case Some(s) => true ; case None => false}
+    }
+  }
+
+  /**
+    * Decodes Direction from a String value
+    * @param s direction in a String format
+    * @return Direction
+    */
+  def decDir(s: String): Direction = {
+    s match {
+      case "NORTH" => North
+      case "WEST" => West
+      case "SOUTH" => South
+      case "EAST" => East
+    }
+  }
+
+  /**
+    * Decodes PLACE command
+    * @param s PLACE command
+    * @return (Int, Int, Direction)
+    */
+  def decPlace(s: String): (Int, Int, Direction) = {
+    val c = s.split(" ")(1).split(",").map(x => x.trim)
+    (c(0).toInt, c(1).toInt, decDir(c(2)))
+  }
+
   def main(args: Array[String]): Unit = {
 
     if (args.length != 1) {
@@ -104,36 +139,12 @@ object RobotApp {
       System.exit(1)
     }
 
-    /**
-      * Decodes Direction from a String value
-      * @param s direction in a String format
-      * @return Direction
-      */
-    def decDir(s: String): Direction = {
-      s match {
-        case "NORTH" => North
-        case "WEST" => West
-        case "SOUTH" => South
-        case "EAST" => East
-      }
-    }
-
-    /**
-      * Decodes PLACE command
-      * @param s PLACE command
-      * @return Int, Int, Direction)
-      */
-    def dec(s: String): (Int, Int, Direction) = {
-      val c = s.split(" ")(1).split(",").map(x => x.trim)
-      (c(0).toInt, c(1).toInt, decDir(c(2)))
-    }
-
-    val result = Source.fromFile(args(0)).getLines.map(c => {
+    val result = Source.fromFile(args(0)).getLines.filter(s => filterCommands(s)).map(c => {
       c.split(" ")(0) match {
         case "MOVE" => Robot.move.as("")
         case "LEFT" => Robot.left.as("")
         case "RIGHT" => Robot.right.as("")
-        case "PLACE" => val p = dec(c); Robot.place(p._1, p._2, p._3).as("")
+        case "PLACE" => val p = decPlace(c); Robot.place(p._1, p._2, p._3).as("")
         case "REPORT" => Robot.report
       }
     }).reduce((a1, a2) => a1.flatMap(_ => a2))

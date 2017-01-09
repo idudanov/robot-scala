@@ -169,4 +169,24 @@ class RobotTest extends FunSuite with Matchers {
 
     assert(result === Robot(true, 0, 5, East))
   }
+
+  test("PLACE 1,2,EAST should be decoded correctly") {
+    val p = RobotApp.decPlace("PLACE 1,2,EAST")
+    assert(p._1 === 1)
+    assert(p._2 === 2)
+    assert(p._3 === East)
+  }
+
+  test("PLACE 0,0,NORTH should be decoded correctly") {
+    val p = RobotApp.decPlace("PLACE 0,0,NORTH")
+    assert(p._1 === 0)
+    assert(p._2 === 0)
+    assert(p._3 === North)
+  }
+
+  test("Robot should accept only valid commands") {
+    val valid = List("MOVE", "LEFT", "RIGHT", "REPORT", "PLACE 0,0,NORTH", "PLACE 1,1,EAST")
+    val invalid = List("FLY", "JUMP", "RUN", "PLACE x,1,EAST", "PLACE 1,y,EAST", "PLACE 0,0,5555")
+    assert(valid.size === (valid ++ invalid.filter(s => RobotApp.filterCommands(s))).size)
+  }
 }
